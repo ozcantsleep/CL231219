@@ -1,0 +1,2 @@
+wasd
+fire : f key
