@@ -1,2 +1,1 @@
-wasd
-fire : f key
+move : wasd / fire : f key
