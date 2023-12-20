@@ -36,4 +36,14 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Components")
 	TObjectPtr< UProjectileMovementComponent> RocketMovement;
+
+	UFUNCTION()
+	void ProcessActorBeginOverlap(AActor* OverlappedActor, AActor* OtherActoer);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void CPPToCallBP(int64 Damage);
+
+	UFUNCTION(BlueprintNativeEvent)
+	void ExistCPPToCallBP(int64 Damage);
+	void ExistCPPToCallBP_Implementation(int64 Damage);
 };

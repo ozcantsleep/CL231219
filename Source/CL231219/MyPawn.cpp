@@ -16,6 +16,11 @@
 //002-007
 #include "MyActor.h"
 
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "InputActionValue.h"
+
+
 // Sets default values
 AMyPawn::AMyPawn()
 {
@@ -47,13 +52,13 @@ AMyPawn::AMyPawn()
 	P38Movement->MaxSpeed = 100.0f;
 
 	//002-003
-	ConstructorHelpers::FObjectFinder<UStaticMesh> SM_P38_Body(TEXT("/Script/Engine.StaticMesh'/Game/P38/Meshes/SM_P38_Body.SM_P38_Body'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SM_P38_Body(TEXT("/Script/Engine.StaticMesh'/Game/P38/Meshes/SM_P38_Body.SM_P38_Body'"));
 	if (SM_P38_Body.Succeeded())
 	{
 		P38Body->SetStaticMesh(SM_P38_Body.Object);
 	}
 
-	ConstructorHelpers::FObjectFinder<UStaticMesh> SM_P38_Propeller(TEXT("/Script/Engine.StaticMesh'/Game/P38/Meshes/SM_P38_Propeller.SM_P38_Propeller'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> SM_P38_Propeller(TEXT("/Script/Engine.StaticMesh'/Game/P38/Meshes/SM_P38_Propeller.SM_P38_Propeller'"));
 	if (SM_P38_Propeller.Succeeded())
 	{
 		P38Left->SetStaticMesh(SM_P38_Propeller.Object);
@@ -94,31 +99,48 @@ void AMyPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	//002-005
-	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &AMyPawn::Fire);
-	PlayerInputComponent->BindAxis(TEXT("Pitch"), this, &AMyPawn::Pitch);
-	PlayerInputComponent->BindAxis(TEXT("Roll"), this, &AMyPawn::Roll);
+	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+	if (EIC && FireAction && PitchAndRollAction)
+	{
+		EIC->BindAction(FireAction, ETriggerEvent::Triggered, this, &AMyPawn::Fire);
+		EIC->BindAction(PitchAndRollAction, ETriggerEvent::Triggered, this, &AMyPawn::PitchAndRoll);
+	}
+}
+
+void AMyPawn::Fire(const FInputActionValue& Value)
+{
+	if (RocketTemplate)
+	{
+		GetWorld()->SpawnActor<AActor>(RocketTemplate, P38Arrow->GetComponentTransform());
+	}
+}
+
+void AMyPawn::PitchAndRoll(const FInputActionValue& Value)
+{
+	FVector2D RotationValue = Value.Get<FVector2D>();
+	RotationValue = RotationValue* UGameplayStatics::GetWorldDeltaSeconds(GetWorld()) * 60.0f;
+	AddActorLocalRotation(FRotator(RotationValue.Y, 0, RotationValue.X));
 }
 
 //002-006
-void AMyPawn::Fire()
-{
-	GetWorld()->SpawnActor<AMyActor>(AMyActor::StaticClass(), P38Arrow->K2_GetComponentLocation(), P38Arrow->K2_GetComponentRotation());
-}
-
-void AMyPawn::Pitch(float Value)
-{
-	if (Value != 0)
-	{
-		AddActorLocalRotation(FRotator(UGameplayStatics::GetWorldDeltaSeconds(GetWorld()) * 60 * Value, 0, 0));
-	}
-}
-
-void AMyPawn::Roll(float Value)
-{
-
-	if (Value != 0)
-	{
-		AddActorLocalRotation(FRotator(0, 0, UGameplayStatics::GetWorldDeltaSeconds(GetWorld()) * 60 * Value));
-	}
-}
+//void AMyPawn::Fire()
+//{
+//	GetWorld()->SpawnActor<AMyActor>(AMyActor::StaticClass(), P38Arrow->K2_GetComponentLocation(), P38Arrow->K2_GetComponentRotation());
+//}
+//
+//void AMyPawn::Pitch(float Value)
+//{
+//	if (Value != 0)
+//	{
+//		AddActorLocalRotation(FRotator(UGameplayStatics::GetWorldDeltaSeconds(GetWorld()) * 60 * Value, 0, 0));
+//	}
+//}
+//
+//void AMyPawn::Roll(float Value)
+//{
+//
+//	if (Value != 0)
+//	{
+//		AddActorLocalRotation(FRotator(0, 0, UGameplayStatics::GetWorldDeltaSeconds(GetWorld()) * 60 * Value));
+//	}
+//}
